@@ -1,15 +1,15 @@
 
 
---1.Какие самолеты имеют более 50 посадочных мест?
+--1.ГЉГ ГЄГЁГҐ Г±Г Г¬Г®Г«ГҐГІГ» ГЁГ¬ГҐГѕГІ ГЎГ®Г«ГҐГҐ 50 ГЇГ®Г±Г Г¤Г®Г·Г­Г»Гµ Г¬ГҐГ±ГІ?
 SELECT aircraft_code, count(distinct seat_no) as seat_count FROM bookings.seats
 group by aircraft_code
 having count(distinct seat_no)>50
 
 
---2.Есть ли рейсы, в рамках которых можно добраться бизнес - классом дешевле, чем эконом - классом?
+--2.Г…Г±ГІГј Г«ГЁ Г°ГҐГ©Г±Г», Гў Г°Г Г¬ГЄГ Гµ ГЄГ®ГІГ®Г°Г»Гµ Г¬Г®Г¦Г­Г® Г¤Г®ГЎГ°Г ГІГјГ±Гї ГЎГЁГ§Г­ГҐГ± - ГЄГ«Г Г±Г±Г®Г¬ Г¤ГҐГёГҐГўГ«ГҐ, Г·ГҐГ¬ ГЅГЄГ®Г­Г®Г¬ - ГЄГ«Г Г±Г±Г®Г¬?
 - CTE
 
---таких рейсов нет
+--ГІГ ГЄГЁГµ Г°ГҐГ©Г±Г®Гў Г­ГҐГІ
 with a as (SELECT flight_id,  min(amount) Business_amount  frOM  bookings.ticket_flights 
 where fare_conditions in ('Business')
 group by flight_id),
@@ -21,9 +21,9 @@ from a full join b on a.flight_id=b.flight_id
 where  Business_amount - Economy_amount<0
 
 
---3.Есть ли самолеты, не имеющие бизнес - класса?
+--3.Г…Г±ГІГј Г«ГЁ Г±Г Г¬Г®Г«ГҐГІГ», Г­ГҐ ГЁГ¬ГҐГѕГ№ГЁГҐ ГЎГЁГ§Г­ГҐГ± - ГЄГ«Г Г±Г±Г ?
 - array_agg
-Да, есть
+Г„Г , ГҐГ±ГІГј
 
 
 select * from (select aircraft_code, array_agg(distinct fare_conditions::text) array_ from bookings.seats
@@ -33,10 +33,10 @@ where  'Business' !=all(array_)
 
 
 
---5. Найдите процентное соотношение перелетов по маршрутам от общего количества перелетов. 
---Выведите в результат названия аэропортов и процентное отношение.
-- Оконная функция
-- Оператор ROUND
+--5. ГЌГ Г©Г¤ГЁГІГҐ ГЇГ°Г®Г¶ГҐГ­ГІГ­Г®ГҐ Г±Г®Г®ГІГ­Г®ГёГҐГ­ГЁГҐ ГЇГҐГ°ГҐГ«ГҐГІГ®Гў ГЇГ® Г¬Г Г°ГёГ°ГіГІГ Г¬ Г®ГІ Г®ГЎГ№ГҐГЈГ® ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ  ГЇГҐГ°ГҐГ«ГҐГІГ®Гў. 
+--Г‚Г»ГўГҐГ¤ГЁГІГҐ Гў Г°ГҐГ§ГіГ«ГјГІГ ГІ Г­Г Г§ГўГ Г­ГЁГї Г ГЅГ°Г®ГЇГ®Г°ГІГ®Гў ГЁ ГЇГ°Г®Г¶ГҐГ­ГІГ­Г®ГҐ Г®ГІГ­Г®ГёГҐГ­ГЁГҐ.
+- ГЋГЄГ®Г­Г­Г Гї ГґГіГ­ГЄГ¶ГЁГї
+- ГЋГЇГҐГ°Г ГІГ®Г° ROUND
 
 select departure_airport, arrival_airport, round(count_*100/sum_total, 3) as percent_ from ( 
 select *, sum(count_) over(order by count_ rows between unbounded preceding and unbounded following) sum_total from (
@@ -45,16 +45,16 @@ group by departure_airport, arrival_airport) a
 ) b
 order by 3 desc
 
---6.Выведите количество пассажиров по каждому коду сотового оператора, если учесть, что код оператора - это три символа после +7
+--6.Г‚Г»ГўГҐГ¤ГЁГІГҐ ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ® ГЇГ Г±Г±Г Г¦ГЁГ°Г®Гў ГЇГ® ГЄГ Г¦Г¤Г®Г¬Гі ГЄГ®Г¤Гі Г±Г®ГІГ®ГўГ®ГЈГ® Г®ГЇГҐГ°Г ГІГ®Г°Г , ГҐГ±Г«ГЁ ГіГ·ГҐГ±ГІГј, Г·ГІГ® ГЄГ®Г¤ Г®ГЇГҐГ°Г ГІГ®Г°Г  - ГЅГІГ® ГІГ°ГЁ Г±ГЁГ¬ГўГ®Г«Г  ГЇГ®Г±Г«ГҐ +7
 
 select operator_, count(distinct phone) as count_uniq_passengers from ( 
  select  contact_data ->> 'phone' as phone, substring(contact_data ->> 'phone', 3, 3) as operator_ from bookings.tickets)a
  group by operator_
 
 
---7.Между какими городами не существует перелетов?
---- Декартово произведение
---- Оператор EXCEPT
+--7.ГЊГҐГ¦Г¤Гі ГЄГ ГЄГЁГ¬ГЁ ГЈГ®Г°Г®Г¤Г Г¬ГЁ Г­ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ ГЇГҐГ°ГҐГ«ГҐГІГ®Гў?
+--- Г„ГҐГЄГ Г°ГІГ®ГўГ® ГЇГ°Г®ГЁГ§ГўГҐГ¤ГҐГ­ГЁГҐ
+--- ГЋГЇГҐГ°Г ГІГ®Г° EXCEPT
  
 
 with a as (select distinct city from bookings.airports) 
@@ -63,12 +63,12 @@ where a.city!= b.city
 EXCEPT
 (select distinct departure_city , arrival_city   from bookings.routes)
 
---8.Классифицируйте финансовые обороты (сумма стоимости билетов) по маршрутам:
-До 50 млн - low
-От 50 млн включительно до 150 млн - middle
-От 150 млн включительно - high
-Выведите в результат количество маршрутов в каждом классе.
-- Оператор CASE
+--8.ГЉГ«Г Г±Г±ГЁГґГЁГ¶ГЁГ°ГіГ©ГІГҐ ГґГЁГ­Г Г­Г±Г®ГўГ»ГҐ Г®ГЎГ®Г°Г®ГІГ» (Г±ГіГ¬Г¬Г  Г±ГІГ®ГЁГ¬Г®Г±ГІГЁ ГЎГЁГ«ГҐГІГ®Гў) ГЇГ® Г¬Г Г°ГёГ°ГіГІГ Г¬:
+Г„Г® 50 Г¬Г«Г­ - low
+ГЋГІ 50 Г¬Г«Г­ ГўГЄГ«ГѕГ·ГЁГІГҐГ«ГјГ­Г® Г¤Г® 150 Г¬Г«Г­ - middle
+ГЋГІ 150 Г¬Г«Г­ ГўГЄГ«ГѕГ·ГЁГІГҐГ«ГјГ­Г® - high
+Г‚Г»ГўГҐГ¤ГЁГІГҐ Гў Г°ГҐГ§ГіГ«ГјГІГ ГІ ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ® Г¬Г Г°ГёГ°ГіГІГ®Гў Гў ГЄГ Г¦Г¤Г®Г¬ ГЄГ«Г Г±Г±ГҐ.
+- ГЋГЇГҐГ°Г ГІГ®Г° CASE
 
 select class_, count(*) from ( 
 select *, case when oborot < 50000000 then 'low'
@@ -78,8 +78,8 @@ select flight_no, sum(amount) oborot from  bookings.ticket_flights t left join b
 group by flight_no) a) b
 group by class_
 
---9.Выведите пары городов между которыми расстояние более 5000 км
-- Оператор RADIANS или использование sind/cosd
+--9.Г‚Г»ГўГҐГ¤ГЁГІГҐ ГЇГ Г°Г» ГЈГ®Г°Г®Г¤Г®Гў Г¬ГҐГ¦Г¤Гі ГЄГ®ГІГ®Г°Г»Г¬ГЁ Г°Г Г±Г±ГІГ®ГїГ­ГЁГҐ ГЎГ®Г«ГҐГҐ 5000 ГЄГ¬
+- ГЋГЇГҐГ°Г ГІГ®Г° RADIANS ГЁГ«ГЁ ГЁГ±ГЇГ®Г«ГјГ§Г®ГўГ Г­ГЁГҐ sind/cosd
 
 select city_a,  city_b from ( 
 select *, acos(sin(radians(latitude_a))*sin(radians(latitude_b)) + 
