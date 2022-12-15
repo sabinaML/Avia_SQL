@@ -1,15 +1,15 @@
 
 
---1.Êàêèå ñàìîëåòû èìåþò áîëåå 50 ïîñàäî÷íûõ ìåñò?
+1.Какие самолеты имеют более 50 посадочных мест?
 SELECT aircraft_code, count(distinct seat_no) as seat_count FROM bookings.seats
 group by aircraft_code
 having count(distinct seat_no)>50
 
 
---2.Åñòü ëè ðåéñû, â ðàìêàõ êîòîðûõ ìîæíî äîáðàòüñÿ áèçíåñ - êëàññîì äåøåâëå, ÷åì ýêîíîì - êëàññîì?
+2.Есть ли рейсы, в рамках которых можно добраться бизнес - классом дешевле, чем эконом - классом
 - CTE
 
---òàêèõ ðåéñîâ íåò
+
 with a as (SELECT flight_id,  min(amount) Business_amount  frOM  bookings.ticket_flights 
 where fare_conditions in ('Business')
 group by flight_id),
@@ -21,9 +21,9 @@ from a full join b on a.flight_id=b.flight_id
 where  Business_amount - Economy_amount<0
 
 
---3.Åñòü ëè ñàìîëåòû, íå èìåþùèå áèçíåñ - êëàññà?
+3.Есть ли самолеты, не имеющие бизнес - класса?
 - array_agg
-Äà, åñòü
+Да, есть
 
 
 select * from (select aircraft_code, array_agg(distinct fare_conditions::text) array_ from bookings.seats
@@ -33,10 +33,10 @@ where  'Business' !=all(array_)
 
 
 
---5. Íàéäèòå ïðîöåíòíîå ñîîòíîøåíèå ïåðåëåòîâ ïî ìàðøðóòàì îò îáùåãî êîëè÷åñòâà ïåðåëåòîâ. 
---Âûâåäèòå â ðåçóëüòàò íàçâàíèÿ àýðîïîðòîâ è ïðîöåíòíîå îòíîøåíèå.
-- Îêîííàÿ ôóíêöèÿ
-- Îïåðàòîð ROUND
+--5. Найдите процентное соотношение перелетов по маршрутам от общего количества перелетов. 
+--Выведите в результат названия аэропортов и процентное отношение.
+- Оконная функция
+- Оператор ROUND
 
 select departure_airport, arrival_airport, round(count_*100/sum_total, 3) as percent_ from ( 
 select *, sum(count_) over(order by count_ rows between unbounded preceding and unbounded following) sum_total from (
@@ -45,16 +45,17 @@ group by departure_airport, arrival_airport) a
 ) b
 order by 3 desc
 
---6.Âûâåäèòå êîëè÷åñòâî ïàññàæèðîâ ïî êàæäîìó êîäó ñîòîâîãî îïåðàòîðà, åñëè ó÷åñòü, ÷òî êîä îïåðàòîðà - ýòî òðè ñèìâîëà ïîñëå +7
+--6.Выведите количество пассажиров по каждому коду сотового оператора, если учесть, что код оператора - это три символа после +7
+
 
 select operator_, count(distinct phone) as count_uniq_passengers from ( 
  select  contact_data ->> 'phone' as phone, substring(contact_data ->> 'phone', 3, 3) as operator_ from bookings.tickets)a
  group by operator_
 
 
---7.Ìåæäó êàêèìè ãîðîäàìè íå ñóùåñòâóåò ïåðåëåòîâ?
---- Äåêàðòîâî ïðîèçâåäåíèå
---- Îïåðàòîð EXCEPT
+--7.Между какими городами не существует перелетов?
+--- Декартово произведение
+--- Оператор EXCEPT
  
 
 with a as (select distinct city from bookings.airports) 
@@ -63,12 +64,12 @@ where a.city!= b.city
 EXCEPT
 (select distinct departure_city , arrival_city   from bookings.routes)
 
---8.Êëàññèôèöèðóéòå ôèíàíñîâûå îáîðîòû (ñóììà ñòîèìîñòè áèëåòîâ) ïî ìàðøðóòàì:
-Äî 50 ìëí - low
-Îò 50 ìëí âêëþ÷èòåëüíî äî 150 ìëí - middle
-Îò 150 ìëí âêëþ÷èòåëüíî - high
-Âûâåäèòå â ðåçóëüòàò êîëè÷åñòâî ìàðøðóòîâ â êàæäîì êëàññå.
-- Îïåðàòîð CASE
+--8.Классифицируйте финансовые обороты (сумма стоимости билетов) по маршрутам:
+До 50 млн - low
+От 50 млн включительно до 150 млн - middle
+От 150 млн включительно - high
+Выведите в результат количество маршрутов в каждом классе.
+- Оператор CASE
 
 select class_, count(*) from ( 
 select *, case when oborot < 50000000 then 'low'
@@ -78,8 +79,8 @@ select flight_no, sum(amount) oborot from  bookings.ticket_flights t left join b
 group by flight_no) a) b
 group by class_
 
---9.Âûâåäèòå ïàðû ãîðîäîâ ìåæäó êîòîðûìè ðàññòîÿíèå áîëåå 5000 êì
-- Îïåðàòîð RADIANS èëè èñïîëüçîâàíèå sind/cosd
+--9.Выведите пары городов между которыми расстояние более 5000 км
+- Оператор RADIANS или использование sind/cosd
 
 select city_a,  city_b from ( 
 select *, acos(sin(radians(latitude_a))*sin(radians(latitude_b)) + 
